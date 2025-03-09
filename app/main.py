@@ -34,8 +34,8 @@ def transform_point(lat: float, lon: float) -> 'Geometry':
     return from_shape(point_utm, srid=26913)
 
 
-@app.get("/lookup")
-def district_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
+@app.get("/district_at_point")
+def district_at_point(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
     point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
@@ -51,8 +51,8 @@ def district_lookup(lat: float = Query(...), lon: float = Query(...), db: Sessio
         "info": district.webpage,
     }
 
-@app.get("/claim_lookup")
-def claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
+@app.get("/claim_at_point")
+def claim_at_point(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
     point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
@@ -74,8 +74,8 @@ def claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session =
         "location_date": claim.locate_dt,
     }
 
-@app.get("/inactive_claim_lookup")
-def inactive_claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
+@app.get("/inactive_claim_at_point")
+def inactive_claim_at_point(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
     point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
