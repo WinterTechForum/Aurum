@@ -1,4 +1,3 @@
-# app/main.py
 from fastapi import FastAPI, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from shapely.geometry import Point
@@ -25,21 +24,22 @@ def get_db():
         db.close()
 
 
-@app.get("/lookup")
-def district_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
-    source_crs = CRS.from_epsg(4326)  # WGS84 lat/lon
-    target_crs = CRS.from_epsg(26913)  # NAD83 / UTM zone 13N
+def transform_point(lat: float, lon: float) -> 'Geometry':
+    # Convert from WGS84 (EPSG:4326) to NAD83 / UTM zone 13N (EPSG:26913)
+    source_crs = CRS.from_epsg(4326)
+    target_crs = CRS.from_epsg(26913)
     transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
     x, y = transformer.transform(lon, lat)
     point_utm = Point(x, y)
+    return from_shape(point_utm, srid=26913)
 
-    # Create a Shapely point (note that GeoAlchemy2 expects (longitude, latitude))
-    # point = from_shape(Point(lon, lat), srid=4326)
 
-    point_geo = from_shape(point_utm, srid=26913)
+@app.get("/lookup")
+def district_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
+    point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
-    district = db.query(MiningDistrict).filter(
+    district: MiningDistrict|None = db.query(MiningDistrict).filter(
         func.ST_Contains(MiningDistrict.geom, point_geo)
     ).first()
 
@@ -53,19 +53,10 @@ def district_lookup(lat: float = Query(...), lon: float = Query(...), db: Sessio
 
 @app.get("/claim_lookup")
 def claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
-    source_crs = CRS.from_epsg(4326)  # WGS84 lat/lon
-    target_crs = CRS.from_epsg(26913)  # NAD83 / UTM zone 13N
-    transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
-    x, y = transformer.transform(lon, lat)
-    point_utm = Point(x, y)
-
-    # Create a Shapely point (note that GeoAlchemy2 expects (longitude, latitude))
-    # point = from_shape(Point(lon, lat), srid=4326)
-
-    point_geo = from_shape(point_utm, srid=26913)
+    point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
-    claim: ActiveClaims = db.query(ActiveClaims).filter(
+    claim: ActiveClaims|None = db.query(ActiveClaims).filter(
         func.ST_Contains(ActiveClaims.geom, point_geo)
     ).first()
 
@@ -80,23 +71,15 @@ def claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session =
         "name_2": claim.name_2,
         "name_3": claim.name_3,
         "name_4": claim.name_4,
+        "location_date": claim.locate_dt,
     }
 
 @app.get("/inactive_claim_lookup")
 def inactive_claim_lookup(lat: float = Query(...), lon: float = Query(...), db: Session = Depends(get_db)):
-    source_crs = CRS.from_epsg(4326)  # WGS84 lat/lon
-    target_crs = CRS.from_epsg(26913)  # NAD83 / UTM zone 13N
-    transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
-    x, y = transformer.transform(lon, lat)
-    point_utm = Point(x, y)
-
-    # Create a Shapely point (note that GeoAlchemy2 expects (longitude, latitude))
-    # point = from_shape(Point(lon, lat), srid=4326)
-
-    point_geo = from_shape(point_utm, srid=26913)
+    point_geo = transform_point(lat, lon)
 
     # Query for a mining district that contains the point
-    claim: ActiveClaims = db.query(InactiveClaims).filter(
+    claim: InactiveClaims|None = db.query(InactiveClaims).filter(
         func.ST_Contains(InactiveClaims.geom, point_geo)
     ).first()
 
