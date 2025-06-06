@@ -25,7 +25,7 @@ geoalchemy2==0.17.1
     # via aurum (pyproject.toml)
 greenlet==3.1.1
     # via sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
