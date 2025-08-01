@@ -89,7 +89,7 @@ sqlalchemy==2.0.38
     #   geoalchemy2
 sse-starlette==2.2.1
     # via mcp
-starlette==0.46.0
+starlette==0.47.2
     # via
     #   fastapi
     #   mcp
